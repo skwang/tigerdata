@@ -76,23 +76,23 @@ WSGI_APPLICATION = 'tinydonut.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 ### HEROKU DB SETTINGS: Comment this out when running on local, but uncomment when using these settings to run on heroku
-import dj_database_url
-DATABASES = {}
-DATABASES['default'] =  dj_database_url.config(default='postgres://ebuqrkhzelydoy:mEdLHkU5Gc-mdOIa0kaD4XZ8HR@ec2-54-83-199-54.compute-1.amazonaws.com:5432/dd0t1sh0r6jvfi')
-DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
+# import dj_database_url
+# DATABASES = {}
+# DATABASES['default'] =  dj_database_url.config(default='postgres://ebuqrkhzelydoy:mEdLHkU5Gc-mdOIa0kaD4XZ8HR@ec2-54-83-199-54.compute-1.amazonaws.com:5432/dd0t1sh0r6jvfi')
+# DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
 ### end of Heroku server db settings
 
 ### LOCAL DB SETTINGS: Uncomment for local 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'tinydonut_db',
-#         'USER': 'tinydonut_user',
-#         'PASSWORD' : 'password',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'tinydonut_db',
+        'USER': 'tinydonut_user',
+        'PASSWORD' : 'password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 ### end of LOCAL DB SETTINGS
 
 # Internationalization
