@@ -58,6 +58,13 @@
         </div>
     </header>
 
+    <div id="graph" class="row">
+        <div class="col-xs-12">
+            <h1 class="graph-title"></h1>
+            <div id="dorm-graph"></div>
+        </div>
+    </div>
+
     
 
     <!--For the search bar-->
@@ -136,24 +143,36 @@
             $.when($.get('/dorm-graph/', {dorm: foundMatch}, function(result){
                 dorm_graph = result;
             })).then(function(){
-                bootbox.dialog({
-                    message: '<div class="row">'
-                                + '<div class="col-xs-12">'
-                                    + '<h1 class="graph-title">' + query + '</h1>'
-                                    + '<div id="dorm-graph">'
-                                    + '</div>'
-                                + '</div>'
-                            + '</div>',
-                    onEscape: function() {},
+                // bootbox.dialog({
+                //     message: '<div class="row">'
+                //                 + '<div class="col-xs-12">'
+                //                     + '<h1 class="graph-title">' + query + '</h1>'
+                //                     + '<div id="dorm-graph">'
+                //                     + '</div>'
+                //                 + '</div>'
+                //             + '</div>',
+                //     onEscape: function() {},
+                // });
+
+                var $divs = $('#graph'),
+                    $buttons = $('#dorm_search_btn'),
+                    $hb = $('html, body');
+
+                $buttons.on('click', function ()
+                {
+                    var $this = $(this),
+                        index = $buttons.index(this);
+
+                    $hb.animate({scrollTop: $divs.eq(index).offset().top + 'px'});
                 });
 
 
                 var graph = dorm_graph;
                 var width = 768, height = 500; // not used rn 
-                var color = d3.scale.category20();
+                var color = d3.scale.category10();
                 var force = d3.layout.force()
                     .charge(-200)
-                    .linkDistance(30)
+                    .linkDistance(50)
                     .size([width, height]);
 
                 // Non-responsive version 
@@ -167,7 +186,7 @@
                        .append("svg")
                        //responsive SVG needs these 2 attributes and no width and height attr
                        .attr("preserveAspectRatio", "xMinYMin meet")
-                       .attr("viewBox", "-150 -200 1400 1000")
+                       .attr("viewBox", "-400 -300 1600 1200")
                        //class to make it responsive
                        .classed("svg-content-responsive", true); 
                 force.nodes(graph["nodes"]).links(graph["links"]).start();

@@ -16,8 +16,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tinydonut.settings")
 application = get_wsgi_application()
 
 ## heroku server settings
-'''
 from dj_static import Cling
 
 application = Cling(get_wsgi_application())
-'''

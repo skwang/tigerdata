@@ -1,0 +1,1 @@
+web: gunicorn tinydonut.wsgi --log-file -

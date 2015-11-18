@@ -24,6 +24,10 @@ body {
 }
 
 /* For the graph */
+#dorm-graph {
+    background-color: white;
+}
+
 .node {
   stroke: #fff;
   stroke-width: 1.5px;
