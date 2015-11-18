@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load staticfiles %}
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>TigreData</title>
+    <meta name="description" content="Data Visualization of Princeton Tigers">
+    <meta name="author" content="skwang">
+    <link rel="shortcut icon" type="image/x-icon" href=" {% static "img/ticon.png" %}">
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link href="{% static "css/index.css" %}" rel="stylesheet">
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.8/d3.min.js"></script>
+
+    <!-- Bootbox -->
+    <script type="text/javascript" src="{% static "js/bootbox.min.js" %}"></script>
+
+    <!-- For the search bar -->
+    <link rel="shortcut icon" href="../favicon.ico"> 
+    <link rel="stylesheet" type="text/css" href="{% static "css/default.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/component.css" %}" />
+    <script src="{% static "js/modernizr.custom.js" %}"></script>
+    
+</head>
+
+<body>
+    <header id="top" class="header">
+        <div class="text-vertical-center">
+            <div class="column-box">
+                <div class="column">
+                    <h2><p>TigreData</p></h2>
+                    <p>A data visualizer for Princeton students. Click the search button to get started.</p>
+                    <p><btn class="btn btn-start btn-lg">See a tutorial</btn></p>
+                    
+                </div>
+        
+                <div class="column column-top-padding">
+                    <div id="sb-search" class="sb-search col-xs-6">
+                        <form>
+                            <input class="sb-search-input" placeholder="Enter a hall..." 
+                                    type="text" value="" name="search" id="dorm_search">
+                            <input class="sb-search-submit btn-start" type="submit" value=""
+                                    id="dorm_search_btn">
+                            <span class="sb-icon-search"></span>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    
+
+    <!--For the search bar-->
+    <script src="{% static "js/classie.js" %}"></script>
+    <script src="{% static "js/uisearch.js" %}"></script>
+    <script>
+        new UISearch( document.getElementById( 'sb-search' ) );
+
+        /* -------------- For handling autocomplete for the dorm search -------------- */
+        var dorm_data;        // stores list of dorms from server
+        var autocompleteDorm; // autocomplete function 
+        // retrieve from server with AJAX call 
+        $.when($.get('/dorm-list/', function(result){
+            dorm_data = result;
+        })).then(function(){
+            autocompleteDorm = function autocompleteDorm(input) {
+                $(input).autocomplete({
+                    source: function(request, response) {
+                        var query = $(input).val().toLowerCase();
+                        var matches = [];
+                        for (var i in dorm_data["dorm_list"]) {
+                            var hallname = dorm_data["dorm_list"][i];
+                            if (hallname.toLowerCase().indexOf(query) == 0)
+                                matches.push({'label': hallname});
+                        }
+                        function compare(a,b) {
+                            if (a.label < b.label)
+                                return -1;
+                            if (a.label > b.label)
+                                return 1;
+                            return 0;
+                        }
+                        matches.sort(compare);
+                        response(matches);
+                    }
+                });
+            };
+            autocompleteDorm("#dorm_search")
+        });
+
+        /* -------------- For handling popup after dorm search is clicked -------------- */
+        // When called will shake the jquery object obj and turn its text red
+        function shakeElement(obj) {
+            var l = 8;  
+            for( var i = 0; i < 10; i++ )   
+                obj.animate( { 'padding-left': "+=" + ( l = -l ) + 'px' }, 50);
+            obj.css("color", "red");  
+        };
+
+        // turn color back to black when typing
+        $("#dorm_search").keypress(function(e){
+            $('#dorm_search').css("color", "black");
+        });
+
+        // Event handler for when the search btn is clicked
+        $('#dorm_search_btn').click(function(e){
+            e.preventDefault();
+            // Compare value to something in the list. If not there,
+            // shake the textfield and return. 
+            var query = $("#dorm_search").val();
+            var foundMatch = ""; // the correctly capitalized matching hall
+            for (var i in dorm_data["dorm_list"]) {
+                var hallname = dorm_data["dorm_list"][i];
+                if (hallname.toLowerCase() == query.toLowerCase())
+                {
+                    foundMatch = hallname;
+                    break;
+                }
+            }
+            if (!foundMatch) {
+                shakeElement($("#dorm_search"));
+                return;
+            }
+            // Else, we have a valid dorm. Make ajax call and generate the popup
+            var dorm_graph;
+            $.when($.get('/dorm-graph/', {dorm: foundMatch}, function(result){
+                dorm_graph = result;
+            })).then(function(){
+                bootbox.dialog({
+                    message: '<div class="row">'
+                                + '<div class="col-xs-12">'
+                                    + '<h1 class="graph-title">' + query + '</h1>'
+                                    + '<div id="dorm-graph">'
+                                    + '</div>'
+                                + '</div>'
+                            + '</div>',
+                    onEscape: function() {},
+                });
+
+
+                var graph = dorm_graph;
+                var width = 768, height = 500; // not used rn 
+                var color = d3.scale.category20();
+                var force = d3.layout.force()
+                    .charge(-200)
+                    .linkDistance(30)
+                    .size([width, height]);
+
+                // Non-responsive version 
+                // var svg = d3.select("#dorm-graph")
+                //     .append("svg")
+                //     .attr("width", width)
+                //     .attr("height", height);
+                var svg = d3.select("#dorm-graph")
+                       .append("div")
+                       .classed("svg-container", true) //container class to make it responsive
+                       .append("svg")
+                       //responsive SVG needs these 2 attributes and no width and height attr
+                       .attr("preserveAspectRatio", "xMinYMin meet")
+                       .attr("viewBox", "-150 -200 1400 1000")
+                       //class to make it responsive
+                       .classed("svg-content-responsive", true); 
+                force.nodes(graph["nodes"]).links(graph["links"]).start();
+                var link = svg.selectAll(".link")
+                      .data(graph["links"])
+                      .enter().append("line")
+                      .attr("class", "link")
+                      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+                var node = svg.selectAll(".node")
+                      .data(graph["nodes"])
+                      .enter().append("circle")
+                      .attr("class", "node")
+                      .attr("r", 10)
+                      .style("fill", function(d) { return color(d.group); })
+                      .call(force.drag);
+
+                node.append("title")
+                      .text(function(d) { return d.name; });
+
+                force.on("tick", function() {
+                    link.attr("x1", function(d) { return d.source.x; })
+                        .attr("y1", function(d) { return d.source.y; })
+                        .attr("x2", function(d) { return d.target.x; })
+                        .attr("y2", function(d) { return d.target.y; });
+
+                    node.attr("cx", function(d) { return d.x; })
+                        .attr("cy", function(d) { return d.y; });
+                });
+            });
+        });
+    </script>
+</body>
+
+
+</html>
